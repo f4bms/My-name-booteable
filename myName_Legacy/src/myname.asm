@@ -1,4 +1,3 @@
-;cosas por corregir: el esc no está sirviendo ni el reiniciar
 ;el random está fijo
 ;las rotaciones no se hacen realmente, solo se escribe de lado el texto
 BITS 16
@@ -8,7 +7,7 @@ ORG 0x8000
 %define KEY_DOWN  0x50
 %define KEY_LEFT  0x4B
 %define KEY_RIGHT 0x4D
-%define KEY_ESC   0x1B
+%define KEY_ESC   0x01
 %define KEY_ENTER 0x1C
 
 %define ROT_NORMAL 0
@@ -35,7 +34,7 @@ main_loop:
     MOV  AH, 0x00
     INT  0x16
 
-    CMP  AL, KEY_ESC
+    CMP  AH, KEY_ESC
     JE   .exit
 
     CMP  AL, 'r'
@@ -77,8 +76,9 @@ main_loop:
 
 .exit:
 halt:
-    HLT
-    JMP  halt
+    MOV  AX, 0x0003
+    INT  0x10
+    JMP  0x0000:0x7C00
 
 
 ;se establece el cursor (del cursor hay que agarrar la ultima pos)
@@ -123,7 +123,7 @@ draw_game:
     DEC  SI
 .flip_loop:
     MOV  AL, [SI]
-    CALL print_char
+    CALL print_init
     INC  DL
     DEC  SI
     LOOP .flip_loop
@@ -139,7 +139,7 @@ draw_game:
     LODSB
     TEST AL, AL
     JZ   .vright_done
-    CALL print_char
+    CALL print_init
     INC  DH
     CMP  DH, 24
     JGE  .vright_done
@@ -164,7 +164,7 @@ draw_game:
     DEC  SI
 .vleft_loop:
     MOV  AL, [SI]
-    CALL print_char
+    CALL print_init
     DEC  DH
     DEC  SI
     LOOP .vleft_loop
@@ -218,6 +218,6 @@ rotation: DB ROT_NORMAL
 name_row: DB 10
 name_col: DB 10
 
-str_name: DB "a", 0
+str_name: DB "ab", 0
 
 TIMES (4*512)-($-$$) DB 0
