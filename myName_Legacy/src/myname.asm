@@ -150,25 +150,20 @@ draw_game:
 ;vertical para arriba
 .vleft:
     MOV  SI, str_name
-    CALL strlen
+    CALL strlen          ; CX = longitud
+    ADD  SI, CX
+    DEC  SI              ; SI apunta al último carácter
     MOV  DH, [name_row]
     MOV  DL, [name_col]
-    ADD  DH, CL
-    DEC  DH
-    CMP  DH, 23
-    JLE  .vleft_ok
-    MOV  DH, 23
-.vleft_ok:
-    PUSH SI
-    ADD  SI, CX
-    DEC  SI
 .vleft_loop:
     MOV  AL, [SI]
     CALL print_init
-    DEC  DH
-    DEC  SI
+    INC  DH              ; baja una fila (igual que vright)
+    CMP  DH, 24
+    JGE  .vleft_done
+    DEC  SI              ; carácter anterior
     LOOP .vleft_loop
-    POP  SI
+.vleft_done:
     RET
 
 ;se imprime ya como tal los datos en la pantalla(es lo mismo del boot)
