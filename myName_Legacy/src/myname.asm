@@ -15,10 +15,35 @@ ORG 0x8000
 %define ROT_LEFT   2
 %define ROT_RIGHT  3
 
+%define MIN_ROW 5
+%define MIN_COL 5
+
 ;las posiciones por ahora son fijas
 start:
-    MOV  BYTE [name_row], 10
-    MOV  BYTE [name_col], 10
+
+randomize:
+    MOV  Ah, 00h
+    INT  1Ah ;se obtiene el tiempo en ticks desde el boot
+
+    mov ax, dx ;se toma el valor de los ticks
+    xor dx, dx ;se limpia el registro dx
+    mov cx, 10 
+    div cx ;se divide ax por 20, el resultado queda en ax y el resto
+    mov al, dl ;se toma el valor del resto para la fila
+    add al, MIN_ROW ;se suma el valor minimo para que quede entre 10 y 29
+
+    MOV  BYTE [name_row], AL
+
+    MOV  Ah, 00h
+    INT  1Ah ;se obtiene el tiempo en ticks desde el boot
+
+    mov ax, dx ;se toma el valor de los ticks
+    xor dx, dx ;se limpia el registro dx
+    mov cx, 10 
+    div cx 
+    mov al, dl ;se toma el valor del resto para la columna
+    add al, MIN_COL 
+    MOV  BYTE [name_col], AL
 
 ;se espera interrupcion de teclado(enter) para comenzar
 wait_enter:
@@ -213,6 +238,6 @@ rotation: DB ROT_NORMAL
 name_row: DB 10
 name_col: DB 10
 
-str_name: DB "ab", 0
+str_name: DB "FabiJere", 0
 
 TIMES (4*512)-($-$$) DB 0
