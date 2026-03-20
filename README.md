@@ -3,7 +3,7 @@
 ## Bootloader
 Implementación de un programa bootloader realizado en ensamblador x86, el cual será capaz de ejecutar una aplicación llamada my name. Este bootloader se encargará de cargar y ejecutar la aplicación en el espacio de memoria adecuado, incluyendo un mensaje de bienvenida antes de iniciar la aplicación.
 
---
+---
 
 ## My name
 
