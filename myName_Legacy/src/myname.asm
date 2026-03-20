@@ -1,0 +1,223 @@
+;cosas por corregir: el esc no está sirviendo ni el reiniciar
+;el random está fijo
+;las rotaciones no se hacen realmente, solo se escribe de lado el texto
+BITS 16
+ORG 0x8000
+
+%define KEY_UP    0x48
+%define KEY_DOWN  0x50
+%define KEY_LEFT  0x4B
+%define KEY_RIGHT 0x4D
+%define KEY_ESC   0x1B
+%define KEY_ENTER 0x1C
+
+%define ROT_NORMAL 0
+%define ROT_FLIP   1
+%define ROT_LEFT   2
+%define ROT_RIGHT  3
+
+;las posiciones por ahora son fijas
+start:
+    MOV  BYTE [name_row], 10
+    MOV  BYTE [name_col], 10
+
+;se espera interrupcion de teclado(enter) para comenzar
+wait_enter:
+    MOV  AH, 0x00
+    INT  0x16
+    CMP  AH, KEY_ENTER
+    JNE  wait_enter
+
+    CALL draw_game
+
+;loop principal, espera teclas para rotar o salir
+main_loop:
+    MOV  AH, 0x00
+    INT  0x16
+
+    CMP  AL, KEY_ESC
+    JE   .exit
+
+    CMP  AL, 'r'
+    JE   .restart
+    CMP  AL, 'R'
+    JE   .restart
+
+    CMP  AL, 0x00
+    JNE  main_loop
+
+    CMP  AH, KEY_UP
+    JE   .up
+    CMP  AH, KEY_DOWN
+    JE   .down
+    CMP  AH, KEY_LEFT
+    JE   .left
+    CMP  AH, KEY_RIGHT
+    JE   .right
+    JMP  main_loop
+
+.up:
+    MOV  BYTE [rotation], ROT_NORMAL
+    JMP  .redraw
+.down:
+    MOV  BYTE [rotation], ROT_FLIP
+    JMP  .redraw
+.left:
+    MOV  BYTE [rotation], ROT_LEFT
+    JMP  .redraw
+.right:
+    MOV  BYTE [rotation], ROT_RIGHT
+    JMP  .redraw
+.restart:
+    MOV  BYTE [rotation], ROT_NORMAL
+    JMP  .redraw
+.redraw:
+    CALL draw_game
+    JMP  main_loop
+
+.exit:
+halt:
+    HLT
+    JMP  halt
+
+
+;se establece el cursor (del cursor hay que agarrar la ultima pos)
+set_cursor:
+    MOV  AH, 0x02
+    XOR  BH, BH
+    INT  0x10
+    RET
+
+;dibuja el juego en la pantalla(las rotaciones realmente no están sirviendo)
+draw_game:
+    MOV  AX, 0x0003
+    INT  0x10
+
+    MOV  AL, [rotation]
+
+    CMP  AL, ROT_NORMAL
+    JE   .normal
+    CMP  AL, ROT_FLIP
+    JE   .flip
+    CMP  AL, ROT_LEFT
+    JE   .vleft
+    JMP  .vright
+
+
+.normal:
+    MOV  DH, [name_row]
+    MOV  DL, [name_col]
+    CALL set_cursor
+    MOV  SI, str_name
+    CALL print_string
+    RET
+
+;de derecha a izquierda
+.flip:
+    MOV  SI, str_name
+    CALL strlen
+    MOV  DH, [name_row]
+    MOV  DL, [name_col]
+    PUSH SI
+    ADD  SI, CX
+    DEC  SI
+.flip_loop:
+    MOV  AL, [SI]
+    CALL print_char
+    INC  DL
+    DEC  SI
+    LOOP .flip_loop
+    POP  SI
+    RET
+
+;vertical para abajo
+.vright:
+    MOV  SI, str_name
+    MOV  DH, [name_row]
+    MOV  DL, [name_col]
+.vright_loop:
+    LODSB
+    TEST AL, AL
+    JZ   .vright_done
+    CALL print_char
+    INC  DH
+    CMP  DH, 24
+    JGE  .vright_done
+    JMP  .vright_loop
+.vright_done:
+    RET
+
+;vertical para arriba
+.vleft:
+    MOV  SI, str_name
+    CALL strlen
+    MOV  DH, [name_row]
+    MOV  DL, [name_col]
+    ADD  DH, CL
+    DEC  DH
+    CMP  DH, 23
+    JLE  .vleft_ok
+    MOV  DH, 23
+.vleft_ok:
+    PUSH SI
+    ADD  SI, CX
+    DEC  SI
+.vleft_loop:
+    MOV  AL, [SI]
+    CALL print_char
+    DEC  DH
+    DEC  SI
+    LOOP .vleft_loop
+    POP  SI
+    RET
+
+;se imprime ya como tal los datos en la pantalla(es lo mismo del boot)
+print_init:
+    PUSH AX
+    PUSH BX
+    CALL set_cursor
+    MOV  AH, 0x0E
+    XOR  BX, BX
+    INT  0x10
+    POP  BX
+    POP  AX
+    RET
+
+print_string:
+    PUSH AX
+    PUSH BX
+.loop:
+    LODSB
+    TEST AL, AL
+    JZ   .done
+    MOV  AH, 0x0E
+    XOR  BX, BX
+    INT  0x10
+    JMP  .loop
+.done:
+    POP  BX
+    POP  AX
+    RET
+
+;longitud de string en SI
+strlen:
+    PUSH SI
+    XOR  CX, CX
+.loop:
+    LODSB
+    TEST AL, AL
+    JZ   .done
+    INC  CX
+    JMP  .loop
+.done:
+    POP  SI
+    RET
+
+;cosas por ahora "fijas"
+rotation: DB ROT_NORMAL
+name_row: DB 10
+name_col: DB 10
+
+str_name: DB "a", 0
+
+TIMES (4*512)-($-$$) DB 0
