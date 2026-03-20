@@ -15,3 +15,13 @@ La idea fundamental de este juego es crear una pantalla donde aparecerá el nomb
 - Flecha abajo
 
 Se podrá reiniciar el juego en cualquier instante, así como finalizarlo (utilizando teclas) y deberá esperar una confirmación para poder iniciar a jugar.
+
+### Herramientas necesarias
+
+- NASM: Un ensamblador para x86
+- QEMU: Un emulador y virtualizador
+
+### Comandos utilizados
+
+- make
+- qemu-system-x86_64 -drive file=build/boot.img,format=raw,if=ide -boot order=c

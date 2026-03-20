@@ -1,5 +1,4 @@
 ; Bootloader x86 (16-bit) - Carga el juego en memoria y ejecuta
-;comando para qemu: qemu-system-x86_64 -drive file=build/boot.img,format=raw,if=ide -boot order=c
 
 ORG 0x7C00                  ; Dirección estándar del bootloader
 BITS 16                     ; Modo real (16 bits)
@@ -51,7 +50,7 @@ printdone:
 
 ; Carga sectores del disco a memoria (INT 13h)
 load_sectors:
-    MOV DL, 0x80            ; Disco duro primario
+    MOV DL, 0x80            ; para que qemu use el disco como tal
     MOV AH, 0x02            ; Función: leer sectores
     MOV AL, SECTOR_AMOUNT
     MOV CH, 0               ; Cilindro
